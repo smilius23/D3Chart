@@ -14,7 +14,7 @@ function loadChart(data, containerId){
      }
    }
  };
-  const showLayouts = true;
+  const showLayouts = false;
   const maxValue = d3.max(data, function(d){ return d.value; });
   const minValue = d3.min(data, function(d){ return d.value; });
   const scaleMaxValue = findMaxValue(maxValue, minValue);
@@ -49,6 +49,8 @@ function loadChart(data, containerId){
   let
     barPadding = 5,
     barWidth =20;
+
+  let maxRange = 10;
 
   dataSort(data);
 
@@ -131,79 +133,109 @@ function loadChart(data, containerId){
          .style('stroke', 'rgba(100, 100, 100, 0.3');
    }
 
+   const brushGroup = svg
+     .append('g')
+     .attr('class', 'brushGroup')
+     .attr('transform', 'translate('+leftGraphWidth+', 0)');
 //------------------------------------------------------------------------------
+
+if (data.length > maxRange){
+  dataForView = data.slice(0, maxRange)
+  scaleMaxValue = findMaxValue(
+    d3.max(dataForView, function(d){ return d.value; }),
+    d3.min(dataForView, function(d){ return d.value; })
+  );
+} else {
+  //yScale.domain(listOfNames.slice(0, data.length))
+  dataForView = data
+}
+
 //-------------------- Scales --------------------------------------------------
+   const xScale = d3.scaleLinear().range([0, mainWidth]);
+xScale.domain([-scaleMaxValue, scaleMaxValue])
 
-   const xScale = d3.scaleLinear()
-     .domain([-scaleMaxValue, scaleMaxValue])
-     .range([0, mainWidth])
+   const xScaleForBrush = d3.scaleLinear().range([0, rightGraphWidth])
+     .domain(d3.extent(data, (d)=>{return d.value}))
 
-   const xScaleForBrush = d3.scaleLinear()
-     .domain([-scaleMaxValue, scaleMaxValue])
-     .range([0, rightGraphWidth])
-     //.nice()
+   let listOfNames = dataForView.map(d => {return d.name});
+   const listOfNamesForBrush = data.map(d => {return d.name});
 
-     const listOfNames = data.map(d => {return d.name});
-     const yScale = d3
-       .scaleBand()
-       .domain(listOfNames)
-       .range([0, mainHeight])
-       .paddingInner(0.3)
+   const yScale = d3.scaleBand().range([0, mainHeight]).paddingInner(0.3)
+yScale.domain(listOfNames);
 
-     const yScaleForBrush = d3
-       .scaleBand()
-       .domain(listOfNames)
-       .range([0, (rightGraphHeight-margins.top)])
-       .paddingInner(0.3)
+   const yScaleForBrush = d3.scaleBand()
+     .range([0, (rightGraphHeight-margins.top)]).paddingInner(0.3)
+     .domain(listOfNamesForBrush);
 
-     const colorScaleForPositiveValue = d3.scaleLinear()
-       .domain([0, maxValue])
-       .range([settings.color.positive.min, settings.color.positive.max])
-     const colorScaleForNegativeValue = d3.scaleLinear()
-       .domain([minValue, 0])
-       .range([settings.color.negative.max, settings.color.negative.min])
+
+   const colorScaleForPositiveValue = d3.scaleLinear()
+     .range([settings.color.positive.min, settings.color.positive.max])
+     .domain([0, maxValue])
+   const colorScaleForNegativeValue = d3.scaleLinear()
+     .range([settings.color.negative.max, settings.color.negative.min])
+     .domain([minValue, 0])
+
 //---------------------End Scales ----------------------------------------------
 
 //---------------------- Axis --------------------------------------------------
-
    const xAxis = d3.axisBottom(xScale).tickValues([-scaleMaxValue, 0 ,scaleMaxValue])
-   const xAxisView = bottomAxisGroup
-     .call(xAxis)
-   xAxisView
-     .selectAll('text')
+   const xAxisView = bottomAxisGroup.call(xAxis)
+   xAxisView.selectAll('text')
      .style('fill', settings.color.text.axis);
-   xAxisView
-     .selectAll('line')
+   xAxisView.selectAll('line')
      .style('stroke', settings.color.text.axis);
-   xAxisView
-     .selectAll('path')
+   xAxisView.selectAll('path')
      .style('stroke', settings.color.text.axis);
 
-     const yAxis = d3.axisLeft(yScale)
-     const yAxisView = mainGraphGroup
-       .call(yAxis)
-     yAxisView
-       .selectAll('text')
-       //.style('font-size','10px')
-       .style('fill', settings.color.text.axis);
-     yAxisView
-       .selectAll('line')
-       .style('stroke', settings.color.text.axis);
-     yAxisView
-       .selectAll('path')
-       .style('stroke', settings.color.text.axis);
+   const yAxis = d3.axisLeft(yScale)
+   const yAxisView = mainGraphGroup.call(yAxis)
+   yAxisView.selectAll('text')
+     .style('fill', settings.color.text.axis);
+   yAxisView.selectAll('line')
+     .style('stroke', settings.color.text.axis);
+   yAxisView.selectAll('path')
+     .style('stroke', settings.color.text.axis);
+//--------------------- End Axis -----------------------------------------------
 
-//---------------------End Axis ------------------------------------------------
+//--------------------- Create Brush -------------------------------------------
+   const brushExtent = Math.max( 1, Math.min( 20, Math.round(data.length*0.2) ) );
+// console.log(data.length);
+//     console.dir(brushExtent);
 
-//---------------------Brush Bar chart------------------------------------------
+   const brush = d3.brushY()
+     .extent([[0, 0], [rightGraphWidth, mainHeight]])
+     .on('brush end', brushed);
 
+   const gBrush = d3.select('.brushGroup')
+     .append('g')
+     .attr('transform', 'translate(0, '+margins.top+')')
+     .attr('class', 'brush')
+     .call(brush);
+
+     gBrush.selectAll('.overlay')
+       .style('fill', 'rgba(100, 100, 100, 0.2)')
+
+     gBrush.selectAll('.selection')
+       .attr('fill', 'none')
+       .attr('stroke', 'rgba(50, 50, 50, 0.5)');
+
+
+     gBrush.selectAll('.handle')
+      .append('line')
+      .attr('x2', rightGraphWidth);
+
+//--------------------- End Brush ----------------------------------------------
+
+
+//--------------------- Brush Bar chart ----------------------------------------
  const brushBar = rightGraphGroup
    .append('g')
    .attr('transform', 'translate(0 , '+ margins.top +')')
    .selectAll('rect')
    .data(data)
    .enter()
-   .append('rect');
+   .append('rect')
+   .attr('class', 'bar');
 
  const brushRectangle = brushBar
    .attr('x', function(d){
@@ -222,24 +254,29 @@ function loadChart(data, containerId){
       return colorScaleForPositiveValue(d.value)
     })
     .transition()
-    .duration(1000)
+    .duration(800)
     .attr('width', function(d){
       if(d.value < 0){
         return xScaleForBrush(0)-xScaleForBrush(d.value);
       }
       return xScaleForBrush(d.value)-xScaleForBrush(0);
     })
-//--------------------- END Brush Bar chart-------------------------------------
 
+   if(data.length > maxRange){
+     gBrush.call(brush.move, [yScaleForBrush(data[0].name), yScaleForBrush(data[maxRange].name)]);
+   }
+//--------------------- END Brush Bar chart-------------------------------------
 //---------------------Main Bars -----------------------------------------------
-   const rectangles = mainGraphGroup
+   const update = (list, duration=1000)=>{
+     const rectangles = mainGraphGroup
      .append('g')
      .selectAll('rect')
-     .data(data)
+     .data(list)
      .enter()
      .append('rect');
 
     const rectangle = rectangles
+     .attr('class', 'bar')
      .on('mouseenter', function() {
          d3.select(this)
          .attr('fill', settings.color.mouseHover);
@@ -269,14 +306,47 @@ function loadChart(data, containerId){
         return colorScaleForPositiveValue(d.value)
       })
       .transition()
-      .duration(1000)
+      .duration(duration)
       .attr('width', function(d){
         if(d.value < 0){
           return xScale(0)-xScale(d.value);
         }
         return xScale(d.value)-xScale(0);
       })
+    }
 
+ update(dataForView);
+
+
+//---------------------End Main Bars -------------------------------------------
+
+   function brushed(){
+     if (!d3.event.sourceEvent) return;
+     if (!d3.event.selection) return;
+   //  if (d3.event.type != 'end') return;
+     let selection = d3.event.selection || yScaleForBrush.range();
+     let index = Math.round(selection[0]/yScaleForBrush.step());
+     let index2 = Math.round(selection[1]/yScaleForBrush.step());
+
+     let newList = data.slice(index, index2)
+
+     let MaxValue = findMaxValue(
+       d3.max(newList, function(d){ return d.value; }),
+       d3.min(newList, function(d){ return d.value; })
+     );
+
+     xScale.domain([-MaxValue, MaxValue]);
+     xAxis.tickValues([-MaxValue, 0 ,MaxValue])
+
+     listOfNames = newList.map(d => {return d.name});
+     yScale.domain(listOfNames);
+
+     mainGraphGroup.selectAll('rect.bar').remove()
+     update(newList, 0);
+
+     bottomAxisGroup.call(xAxis)
+     mainGraphGroup.call(yAxis)
+   }
 }
 
 function findMaxValue(value1, value2){
