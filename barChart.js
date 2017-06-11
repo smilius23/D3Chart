@@ -1,18 +1,19 @@
 function loadChart(data, containerId){
   const settings = {
-   color: {
-     text: {
-       axis: 'rgb(100, 100, 100)'
-     },
-     positive: {
-       min: 'rgb(0, 200, 0)',
-       max: 'rgb(0, 100, 0)'
-     },
-     negative: {
-       min: 'rgb(255, 60, 60)',
-       max: 'rgb(150, 30, 30)'
-     }
-   }
+    color: {
+      text: {
+        axis: 'rgb(130, 130, 130)'
+      },
+      mouseHover: 'rgb(65, 176, 238)',
+      positive: {
+        min: 'rgb(96, 205, 24)',
+        max: 'rgb(55, 157, 0)'
+      },
+      negative: {
+        min: 'rgb(240, 53, 41)',
+        max: 'rgb(187, 0, 12)'
+      }
+    }
  };
   const showLayouts = false;
   const maxValue = d3.max(data, function(d){ return d.value; });
