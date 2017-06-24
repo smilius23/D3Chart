@@ -10,6 +10,9 @@
     <div id="forceContainer"></div>
     <script src="barChart.js"></script>
     <script src="force.js"></script>
+    <div id="progresChartContainer"></div>
+    <script src="barChart.js"></script>
+    <script src="progressMeterChart.js"></script>
     <script>
       window.dataForChart = [
         {
@@ -75,6 +78,7 @@
       ]
       loadChart(window.dataForChart, 'chartContainer');
       loadForce(window.dataForForceNode, 'forceContainer');
+      loadProgressMeter(900, 280,'progresChartContainer')
     </script>
   </body>
 </html>
