@@ -7,7 +7,9 @@
   </head>
   <body>
     <div id="chartContainer"></div>
+    <div id="forceContainer"></div>
     <script src="barChart.js"></script>
+    <script src="force.js"></script>
     <script>
       window.dataForChart = [
         {
@@ -35,8 +37,44 @@
           name: 'minus Sesi',
           value: -6
         }
+      ];
+      window.dataForForce = [
+        {
+          name: 'pirmas',
+          value: 1,
+          children: [
+            {
+              name: 'pirmo PIRMAS',
+              value: '11'
+            },{
+              name: 'pirmo ANTRAS',
+              value: '12'
+            }
+          ]
+        },{
+          name: 'antras',
+          value: 2,
+          children: [
+            {
+              name: 'antro PIRMAS',
+              value: '21'
+            },{
+              name: 'antro ANTRAS',
+              value: '22'
+            },{
+              name: 'antro TRECIAS',
+              value: '13'
+            }
+          ]
+        }
+      ];
+      window.dataForForceNode = [
+        {name: 'Ona'},
+        {name: 'Petras'},
+        {name: 'Jonas'}
       ]
       loadChart(window.dataForChart, 'chartContainer');
+      loadForce(window.dataForForceNode, 'forceContainer');
     </script>
   </body>
 </html>
