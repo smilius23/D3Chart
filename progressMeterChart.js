@@ -68,6 +68,20 @@ function loadProgressMeter(total, progress, containerId){
        .attr("text-anchor", "middle")
        .attr("dy", ".35em")
        .attr("font-size", "24")
-       .text(dataset["progress"]);
+       .transition()
+       .duration(1000)
+       .tween("text", function() {
+         var node = this
+         return function(t) {
+           node.textContent = d3.interpolateRound(0, dataset["progress"])(t);
+         };
+       });
+
+    svg.on('mousemove', function () {
+    const position = d3.mouse(svg.node());
+    console.dir(position);
+    //text.text('X=' + position[0] + ' , Y=' + position[1]);
+    });
+
 
 }
